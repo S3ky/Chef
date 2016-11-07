@@ -20,6 +20,7 @@ These attributes affect the way all of the LWRPs are behaving.
 
 Usage
 -----
+* `selinux_policy::install` - Installs SELinux policy management tools
 
 This cookbook's functionality is exposed via resources, so it should be called from a wrapper cookbook.
 Remember to add `depends 'selinux_policy'` to your `metadata.rb`.
@@ -38,6 +39,8 @@ Attributes:
 Example usage:
 
 ```ruby
+include_recipe 'selinux_policy::install'
+
 selinux_policy_boolean 'httpd_can_network_connect' do
     value true
     # Make sure nginx is started if this value was modified
@@ -67,6 +70,8 @@ Attributes:
 Example usage:
 
 ```ruby
+include_recipe 'selinux_policy::install'
+
 # Allow nginx to bind to port 5678, by giving it the http_port_t context
 selinux_policy_port '5678' do
     protocol 'tcp'
@@ -99,6 +104,8 @@ Attributes:
 Example usage:
 
 ```ruby
+include_recipe 'selinux_policy::install'
+
 # Allow openvpn to write/delete in '/etc/openvpn'
 selinux_policy_module 'openvpn-googleauthenticator' do
   content <<-eos
@@ -132,10 +139,21 @@ Attributes:
 
 * `file_spec`: This is the file regexp in question, defaults to resource name.
 * `secontext`: The SELinux context to assign the file regexp to. Not required for `:delete`
+* `file_type`: Restrict the fcontext to specific file types. See the table below for an overview. See also https://en.wikipedia.org/wiki/Unix_file_types for more info
+* **a** All files
+* **f** Regular files
+* **d** Directory
+* **c** Character device
+* **b** Block device
+* **s** Socket
+* **l** Symbolic link
+* **p** Namedpipe
 
 Example usage (see mysql cookbook for example daemons ):
 
 ```ruby
+include_recipe 'selinux_policy::install'
+
 # Allow http servers (nginx/apache) to modify moodle files
 selinux_policy_fcontext '/var/www/moodle(/.*)?' do
   secontext 'httpd_sys_rw_content_t'
@@ -152,6 +170,12 @@ end
     secontext sc
   end
 end
+
+# Adapt a symbolic link
+selinux_policy_fcontext '/var/www/symlink_to_webroot' do
+  secontext 'httpd_sys_rw_content_t'
+  filetype 'l'
+end
 ```
 
 ### permissive
@@ -166,6 +190,8 @@ Actions:
 Example usage:
 
 ```ruby
+include_recipe 'selinux_policy::install'
+
 # Disable enforcement on Nginx
 # As described on http://nginx.com/blog/nginx-se-linux-changes-upgrading-rhel-6-6/
 
@@ -183,16 +209,15 @@ We also only test against CentOS (because Ubuntu comes with SELinux disabled and
 I don't use Chef 11, but stuff *seems* to work OK to other people.
 
 ## Contributing
-Pretty standard.  
-If fixing a bug, please add regession tests to the RSpec (if applicable) and the kitchen.  
-If adding a feature, please create basic tests for it, both RSpec and kitchen.
-
-1. Fork the repository on Github
+1. Fork the repository
 2. Create a named feature branch (like `add_component_x`)
 3. Write your change
-4. Write tests for your change (if applicable)
-5. Run the tests, ensuring they all pass
-6. Submit a Pull Request using Github
+4. Write tests for your change (if applicable):  
+    If fixing a bug, please add regression tests for the RSpec (if possible) and the kitchen
+    If adding a feature, please create basic tests for it, in both RSpec and kitchen
+5. Run the tests, ensuring they all pass, using `rake testing:user`
+6. Submit a Pull Request using Github  
+    Please **attach the test results** using a gist
 
 License and Authors
 -------------------
@@ -205,5 +230,8 @@ Contributors:
 * [Kieren Evans](https://github.com/kierenevans) (http://kle.me)
 * [Antek Baranski](https://github.com/Sauraus)
 * [James Le Cuirot](https://github.com/chewi)
+* [John Bartko](https://github.com/jbartko)
+* [Maksim Horbul](https://github.com/mhorbul)
+* [Dieter Blomme](https://github.com/daften)
 
 I'll be happy to accept contributions or to hear from you!
